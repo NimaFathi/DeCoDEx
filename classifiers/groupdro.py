@@ -35,6 +35,86 @@ def find_optimal_cutoff(target, predicted):
     optimal_threshold = threshold[optimal_idx]
     return optimal_threshold
 
+class PE90DotNoSupportDatasetGroupDRO(Dataset):
+    def __init__(
+        self,
+        image_size,
+        data_dir,
+        partition,
+        path='img_dot_healthy_90',
+        task='classification', # it can either be classification or detection
+        shard=0,
+        num_shards=1,
+        class_cond=False,
+        random_crop=True,
+        random_flip=True,
+        normalize=True,
+        biased=False
+    ):
+        self.data_dir = data_dir
+        data = pd.read_csv(osp.join(data_dir, 'info.csv'))
+
+        if partition == 'train':
+            partition = 0
+        elif partition == 'val':
+            partition = 1
+        elif partition == 'test':
+            partition = 2
+        else:
+            raise ValueError(f'Unkown partition {partition}')
+
+        self.data = data[data['partition'] == partition]
+        self.data = self.data[shard::num_shards]
+        self.data.reset_index(inplace=True)
+        self.data.replace(-1, 0, inplace=True)
+
+        self.transform = transforms.Compose([
+            transforms.Resize(image_size),
+            transforms.RandomHorizontalFlip() if random_flip else lambda x: x,
+            transforms.CenterCrop(image_size),
+            transforms.RandomResizedCrop(image_size, (0.95, 1.0)) if random_crop else lambda x: x,
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5],
+                                 [0.5, 0.5, 0.5]) if normalize else lambda x: x
+        ])
+
+        self.class_cond = class_cond
+        self.task = task
+        self.path = path
+        if biased:
+            self.data = self.data[self.data['group'].isin([0, 3])]       # self.data.replace(-1, 0, inplace=True)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        sample = self.data.iloc[idx, :]
+        img_file = sample['Path']
+
+        # Determine the label based on the task
+        if self.task == 'classification':
+            label = 0 if sample['group'] in [0, 2] else 1
+        elif self.task == 'detection':
+            # Convert 'Healthy/Unhealthy' to binary labels
+            label = 1 if sample['group'] in [0,1] else 0
+        elif self.task == 'both':
+            det_label = 1 if sample['group'] in [0, 1] else 0
+            cls_label = 0 if sample['group'] in [0, 2] else 1
+        else:
+            raise ValueError(f'Unknown task {self.task}')
+        # Rest of the code to load and transform the image...
+        with open(os.path.join(self.data_dir, self.path, img_file), "rb") as f:
+            img = Image.open(f)
+            img = img.convert('RGB')
+
+        img = self.transform(img)
+        if self.task == 'both':
+            return img, {'y': cls_label, 'z': det_label}
+        return img, label, sample['group']
+
+
+
+
 class MedicalDevicePEDatasetGroupDRO(Dataset):
     def __init__(
         self,
@@ -53,7 +133,6 @@ class MedicalDevicePEDatasetGroupDRO(Dataset):
         normalize=True,
         biased=False,
         rebalance=True,
-        positive_label=1,
         sample=False
     ):
         self.data_dir = data_dir
@@ -91,10 +170,8 @@ class MedicalDevicePEDatasetGroupDRO(Dataset):
         self.biased = biased
         if rebalance:
             self.data = self._balance_subjects(self.data, ratio=ratio, sample=sample)
-        self.positive_label = positive_label
     @staticmethod
     def _balance_subjects(df, ratio=1., sample=False):
-        print('here', sample)
         if ratio==1:
             return df
         else:
@@ -124,13 +201,13 @@ class MedicalDevicePEDatasetGroupDRO(Dataset):
         # Determine the label based on the task
         if self.task == 'classification':
                 # Convert 'Healthy/Unhealthy' to binary labels make sure to change back to [0, 2]
-                label = self.positive_label if sample['group'] in [0, 2] else 1 - self.positive_label
+                label = 0 if sample['group'] in [0, 2] else 1 
         elif self.task == 'detection':
             # Binary label for dot detection based on 'group'
             label = 1 if sample['group'] in [0, 1] else 0
         elif self.task == 'both':
             det_label = 1 if sample['group'] in [0, 1] else 0
-            cls_label = self.positive_label if sample['group'] in [0, 2] else 1 - self.positive_label
+            cls_label = 0 if sample['group'] in [0, 2] else 1 
         else:
             raise ValueError(f'Unknown task {self.task}')
 
@@ -411,8 +488,8 @@ if __name__ == "__main__":
     # ============================================================================
 
     parser = argparse.ArgumentParser(description="Training a classifier/detector for contrived CheXpert/Pleural Effusion dataset")
-    parser.add_argument("--data_dir", type=str, default='/usr/local/faststorage/datasets/chexpert', help="Directory of the dataset")
-    parser.add_argument("--model_path", type=str, default="/usr/local/data/nimafh/midl2024-cfdiffusion/pretrained/exp_SD_classification_densenet121_256_after.pth", help="Path to save the model")
+    parser.add_argument("--data_dir", type=str, help="Directory of the dataset", required=True)
+    parser.add_argument("--model_path", type=str, help="Path to save the model", required=True)
     parser.add_argument("--epochs", type=int, default=40, help="Number of epochs for training")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--image_size", type=int, default=256, help="Size of the images")
@@ -425,16 +502,13 @@ if __name__ == "__main__":
     parser.add_argument("--random_flip", action="store_true", help="Use random flipping as augmentation")
     parser.add_argument("--gpu_id", type=int, default=0, help="GPU ID to use")
     parser.add_argument("--biased", action="store_true", help="Use biased dataset")
-    parser.add_argument("--balanced", action="store_true", help="Use balanced dataset")
-    parser.add_argument("--balance_ratio", type=float, default=1, help="Ratio of positive samples in the balanced dataset")
+    parser.add_argument("--balanced", action="store_false", help="Use balanced dataset")
+    parser.add_argument("--balance_ratio", type=float, default=0.1, help="Ratio of positive samples in the balanced dataset")
     parser.add_argument("--augment", action="store_true", help="Use augmented dataset")
+    parser.add_argument("--augmented_data_dir", type=str, default="/usr/local/data/nimafh/midl2024-cfdiffusion/final_results/SD/MD_NoFinding256_gradreversal_final", help="Path to augmented data")
+    parser.add_argument("--dataset", type=str, default="PE90DotNoSupport", help="Dataset to use", choices=["PE90DotNoSupport", "MedicalDevicePEDataset"])
     args = parser.parse_args()
 
-    if args.augment:
-        print("Using augmented dataset")
-        args.model_path = "/usr/local/data/nimafh/midl2024-cfdiffusion/pretrained/exp_SD_classification_densenet121_256_after_groupdro_decodex.pth"
-    else:
-        args.model_path = "/usr/local/data/nimafh/midl2024-cfdiffusion/pretrained/exp_SD_classification_densenet121_256_groupdro.pth"
     # Device
     if torch.cuda.is_available():
         device = torch.device(f"cuda:{args.gpu_id}")
@@ -458,37 +532,57 @@ if __name__ == "__main__":
     # Learning rate will be reduced automatically during training
     lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor = args.lr_sf, patience = args.lr_patience, mode = 'max', verbose=True)
     
-    dataset_train_real = MedicalDevicePEDatasetGroupDRO(image_size=args.image_size,
+    if args.dataset == 'PE90DotNoSupport':
+        dataset_train_real = PE90DotNoSupportDatasetGroupDRO(image_size=args.image_size,
                                           data_dir=args.data_dir,
                                           partition='train',
                                           task=args.task, # 'classification' or 'detection
                                           random_crop=args.random_crop,
                                           random_flip=args.random_flip,
-                                          biased=False,
-                                          rebalance=True,
+                                          biased=args.biased,
                                           csv_dir='/usr/local/data/nimafh/midl2024-cfdiffusion/datasets',
-                                          ratio=0.1,
-                                          sample=True,
-                                          positive_label=0
                                           )
-    if args.augment:
-        dataset_train_augmet = AugmentedMD(root_dir='/usr/local/data/nimafh/midl2024-cfdiffusion/final_results/SD/MD_NoFinding256_gradreversal_final',
-                                        random_crop=True, random_flip=True, normalize=True)
-        dataset_train = data.ConcatDataset([dataset_train_real, dataset_train_augmet])
-    else:
-        dataset_train = dataset_train_real
-    dataset_val = MedicalDevicePEDatasetGroupDRO(image_size=args.image_size,
+        dataset_val = PE90DotNoSupportDatasetGroupDRO(image_size=args.image_size,
                                         data_dir=args.data_dir,
                                         partition='val',
                                         task=args.task, # 'classification' or 'detection
                                         random_crop=False,
                                         random_flip=False,
-                                        biased=False,
+                                        biased=args.biased,
+                                        )
+    else:
+        dataset_train_real = MedicalDevicePEDatasetGroupDRO(image_size=args.image_size,
+                                          data_dir=args.data_dir,
+                                          partition='train',
+                                          task=args.task, # 'classification' or 'detection
+                                          random_crop=args.random_crop,
+                                          random_flip=args.random_flip,
+                                          biased=args.biased,
+                                          rebalance=True,
+                                          csv_dir='/usr/local/data/nimafh/midl2024-cfdiffusion/datasets',
+                                          ratio=args.balance_ratio,
+                                          sample=True,
+                                          )
+        dataset_val = MedicalDevicePEDatasetGroupDRO(image_size=args.image_size,
+                                        data_dir=args.data_dir,
+                                        partition='val',
+                                        task=args.task, # 'classification' or 'detection
+                                        random_crop=False,
+                                        random_flip=False,
+                                        biased=args.biased,
                                         rebalance=True,
                                         csv_dir='/usr/local/data/nimafh/midl2024-cfdiffusion/datasets',
                                         ratio=0.1,
-                                        positive_label=0
                                         )
+        
+    if args.augment:
+        dataset_train_augmet = AugmentedMD(root_dir=args.augmented_data_dir, random_flip=args.random_flip, random_crop=args.random_crop, normalize=True, image_size=args.image_size)
+        
+        dataset_train = data.ConcatDataset([dataset_train_real, dataset_train_augmet])
+        
+    else:
+        dataset_train = dataset_train_real
+        
     print(f'Images on the dataset:{len(dataset_train)} [Train], {len(dataset_val)} [Val]', )
 
     train_dataloader = data.DataLoader(dataset_train, batch_size=args.batch_size,
@@ -544,7 +638,8 @@ if __name__ == "__main__":
             nonimproved_epoch = 0
             torch.save({"model": model.state_dict(), 
                         "optimizer": optimizer.state_dict(), 
-                        "best_score": best_score, 
+                        "best_score": best_score,
+                        "best_threshold": best_threshold,
                         "epoch": epoch, 
                         "lr_scheduler": lr_scheduler.state_dict()}, args.model_path)
         else: 

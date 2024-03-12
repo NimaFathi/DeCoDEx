@@ -23,21 +23,21 @@ pip install -r requirements.txt --no-cache
 
 ## Create Datasets
 
-In this project, we utilize a specific dataset format to ensure consistency and reproducibility in our experiments. To prepare your dataset in the same manner, please follow the steps outlined below:
+Follow the steps outlined below:
 
-1. **Data Preparation**: Ensure your data is in the required format. Download cheXpert dataset from this [link]([https://www.kaggle.com/datasets/willarevalo/chexpert-v10-small](https://stanfordmlgroup.github.io/competitions/chexpert/)). usee the `train.csv` file to contrive different version of the dataset.
-2. **Preprocessing**: Apply the necessary preprocessing steps. We have two different datasets:
-- Dot Dataset: For Dot Dataset we only use the subjects without support devices based on the labels in the `train.csv` file. 90% of the subjects with `Pleural Effusion` are augmented with the artifact whereas only 10% of subjects with `No Finding` contain the artifact. For more information check this [Notebook](notebooks/create_dot_dataset.ipynb).
-- Device Dataset: For Device Dataset we use the original images and contrive the number of samples in each subgroup. For subjects with `Pleural Effusion` we contrive the number of samples in a way that 90% of such subjects also have `Support Devices` whereas for the subjects with `No Finding` statistics are the opposite (90% of such subjects does not have `Support Devices`). You can refer to this [Notebook](notebooks/create_md_dataset.ipynb) and follow the steps.
-
-3. **Dataset Notebook**: For details, refer to the Jupyter notebooks. [Dot Dataset](notebooks/create_dot_dataset.ipynb), [Device Dataset](notebooks/create_md_dataset.ipynb)
+1. **Data Preparation**: Download cheXpert dataset from this [link](https://stanfordmlgroup.github.io/competitions/chexpert/). Use the `train.csv` file to contrive different version of the dataset.
+2. **Preprocessing**: Apply the necessary preprocessing steps. We have two different sub-datasets:
+- _Dot Dataset_: In this case we only use the subjects without support devices based on the labels in the `train.csv` file. 90% of the subjects with `Pleural Effusion` are augmented with the artifact whereas only 10% of subjects with `No Finding` contain the artifact. [Dot Dataset](notebooks/create_dot_dataset.ipynb)
+- _Device Dataset_: In this case, no mofications are made to the raw images directly downloaded from the repository. For subjects with `Pleural Effusion` we contrive the number of samples in a way that 90% of such subjects also have `Support Devices` whereas for the subjects with `No Finding` statistics are the opposite (90% of such subjects does not have `Support Devices`). [Device Dataset](notebooks/create_md_dataset.ipynb)
 
 ## Train DDPM
 
 To train the Denoising Diffusion Probabilistic Model (DDPM) used in our framework, follow the steps below. Adjust the parameters as needed for your specific use case.
 
 ```bash
-python train_ddpm.py --dataset [YOUR_DATASET] --epochs 50 --learning_rate 1e-4 --other_args
+python train_ddpm.py --dataset [YOUR_DATASET] --epochs 50 --learning_rate 1e-4 --batch_size 16 --lr 1e-4 \
+                     --save_interval 10000 --weight_decay 0.05 --dropout 0.0 --diffusion_steps 500 \
+                     --noise_schedule linear --num_channels 128 --num_head_channels 64 --num_res_blocks 2 
 ```
 
 (Replace `[YOUR_DATASET]` with the path to your dataset and adjust other arguments as necessary.)

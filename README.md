@@ -5,7 +5,7 @@ This is the official repository of the DeCoDEx (submitted to Medical Imaging wit
 
 Link to the paper - [DeCoDEx](https://openreview.net/forum?id=M6CfJ5H7XH)
 
-
+![Network Architecture](images/architecture.png)
 
 ## Table of Contents
 - [Create Virtual Environment](#create-virtual-environment-venv)

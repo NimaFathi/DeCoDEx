@@ -13,7 +13,7 @@ Link to the paper - [DeCoDEx](https://openreview.net/forum?id=M6CfJ5H7XH)
 - [Train DDPM](#train-ddpm)
 - [Train Classifiers](#train-classifiers)
 - [Counterfactual Generation](#counterfactual-generation)
-- [Metrics](#metrics)
+- [Reference](#code-base)
 
 ## Create Virtual Environment Venv
 Create a virtual Environment and install the nessecary packages from the `requirements.txt` file as shown:
@@ -40,13 +40,9 @@ python train_ddpm.py --dataset [YOUR_DATASET] --epochs 50 --learning_rate 1e-4 -
                      --noise_schedule linear --num_channels 128 --num_head_channels 64 --num_res_blocks 2 
 ```
 
-(Replace `[YOUR_DATASET]` with the path to your dataset and adjust other arguments as necessary.)
-
-To update the classifier training section in your `README.md` with the new parser options and a more generalized command example, you could write something like this:
+Replace `[YOUR_DATASET]` with the path to your dataset and adjust other arguments as necessary.
 
 ## Train Classifiers
-
-This section provides instructions on how to train classifiers or detectors for the specified dataset. The training script is highly configurable with several command-line arguments to suit your training needs.
 
 ### Usage
 
@@ -88,16 +84,11 @@ python [erm.py|groupdro.py] \
 - `--augmented_data_dir`: Path to the directory that contains CF images for augmentation.
 - `--dataset`: Choose between 'PE90DotNoSupport' and 'MedicalDevicePEDataset' for the dataset.
 
-Adjust these parameters according to your dataset and training preferences. For further customization, you can add additional arguments as needed.
-
-
 ## Counterfactual Generation
 
-The framework generates counterfactual explanations by integrating diffusion models with classifiers and detectors. The generation script is configurable to accommodate various experimental setups and datasets.
+DeCoDEx generates counterfactual explanations by integrating diffusion models with classifiers and detectors. The generation script is configurable to accommodate various experimental setups and datasets.
 
 ### Generating Counterfactuals
-
-Execute the command below to start generating counterfactuals. You'll need to replace the placeholders with appropriate values tailored to your specific requirements:
 
 ```bash
 python -W ignore ../mains/main_md_gradreversal.py [MODEL_FLAGS] [SAMPLE_FLAGS] \
@@ -143,10 +134,9 @@ python -W ignore ../mains/main_md_gradreversal.py [MODEL_FLAGS] [SAMPLE_FLAGS] \
 - `--csv_dir`: Where to save CSV files with metadata about the generations.
 - `--detector_threshold`, `--classifier_threshold`: Thresholds for activation of the detector and classifier.
 
-Please refer to the provided script file within the repository for a comprehensive example, including all necessary parameters for running your counterfactual generation experiments effectively.
 
 ## Results
-The directory structure for the results of the experiments is organized as follows:
+The directory structure for the results of the experiments is organized as:
 ```
 output_path/
 └── Results/
@@ -199,7 +189,7 @@ output_path/
                     └── SM/
 ```
 
-### Terminology and Structure Details
+### Other Details
 
 - **CC**: Correct Classifier
 - **IC**: Incorrect Classifier
@@ -222,16 +212,6 @@ The `Info` directory contains essential information needed for running the metri
 - **class target**: Target value for prediction during inference; for classification, it is always the opposite of `class pred (org img)`.
 - **cf pred**: Predicted disease value for the counterfactual image.
 
-## Metrics
 
-To evaluate the generated counterfactuals, we employ several metrics. Detailed instructions and a sample notebook will be provided for each metric. Ensure to use the corresponding evaluation script for your analyses.
-
-- **Metric 1**: Description and usage.
-- **Metric 2**: Description and usage.
-- (Add more metrics as necessary.)
-
-For a practical demonstration on how to use these metrics, refer to the included Jupyter notebook. (Link to the notebook).
-```
-```
 ## Code Base 
 Our repository is based on [DiME](https://github.com/guillaumejs2403/DiME)

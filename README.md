@@ -1,17 +1,21 @@
 
-# DeCoDEx: Deep Counterfactual Explanation Framework
+# DeCoDEx: Confounder Detector Guidance for Improved Diffusion-based Counterfactual Explanations
 
-Welcome to the official repository of the DeCoDEx project. This framework is designed for generating deep counterfactual explanations using diffusion models and classifiers. Below you'll find instructions on how to create datasets, train models, and generate counterfactuals, along with information on the metrics used for evaluation. This codebase is influenced by [DiME repository](https://github.com/guillaumejs2403/DiME).
+This is the official repository of the DeCoDEx (submitted to Medical Imaging with Deep Learning (MIDL 2024)). 
+
+Link to the paper - [DeCoDEx](https://openreview.net/forum?id=M6CfJ5H7XH)
+
+
 
 ## Table of Contents
-- [Create Virtual Environment](#install-venv)
+- [Create Virtual Environment](#create-virtual-environment-venv)
 - [Create Datasets](#create-datasets)
 - [Train DDPM](#train-ddpm)
 - [Train Classifiers](#train-classifiers)
 - [Counterfactual Generation](#counterfactual-generation)
 - [Metrics](#metrics)
 
-## Install Venv
+## Create Virtual Environment Venv
 Create a virtual Environment and install the nessecary packages from the `requirements.txt` file as shown:
 ```bash
 pip install -r requirements.txt --no-cache
@@ -26,7 +30,7 @@ In this project, we utilize a specific dataset format to ensure consistency and 
 - Dot Dataset: For Dot Dataset we only use the subjects without support devices based on the labels in the `train.csv` file. 90% of the subjects with `Pleural Effusion` are augmented with the artifact whereas only 10% of subjects with `No Finding` contain the artifact. For more information check this [Notebook](notebooks/create_dot_dataset.ipynb).
 - Device Dataset: For Device Dataset we use the original images and contrive the number of samples in each subgroup. For subjects with `Pleural Effusion` we contrive the number of samples in a way that 90% of such subjects also have `Support Devices` whereas for the subjects with `No Finding` statistics are the opposite (90% of such subjects does not have `Support Devices`). You can refer to this [Notebook](notebooks/create_md_dataset.ipynb) and follow the steps.
 
-3. **Dataset Notebook**: For detailed instructions, refer to the provided Jupyter notebooks. [Dot Dataset](notebooks/create_dot_dataset.ipynb), [Device Dataset](notebooks/create_md_dataset.ipynb)
+3. **Dataset Notebook**: For details, refer to the Jupyter notebooks. [Dot Dataset](notebooks/create_dot_dataset.ipynb), [Device Dataset](notebooks/create_md_dataset.ipynb)
 
 ## Train DDPM
 
@@ -228,3 +232,6 @@ To evaluate the generated counterfactuals, we employ several metrics. Detailed i
 
 For a practical demonstration on how to use these metrics, refer to the included Jupyter notebook. (Link to the notebook).
 ```
+```
+## Code Base 
+Our repository is based on [DiME](https://github.com/guillaumejs2403/DiME)

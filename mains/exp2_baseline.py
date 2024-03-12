@@ -67,13 +67,12 @@ def create_args():
         gpu='0',
         num_batches=50,
         use_train=False,
-        dataset='CelebA',
+        dataset='PE90_DotNoSupport',
 
         # path args
         output_path='',
         classifier_path='models/classifier.pth',
         detector_path='models/detector.pth',
-        oracle_path='models/oracle.pth',
         model_path="models/ddpm-celeba.pt",
         csv_dir="",
         data_dir="",
@@ -98,8 +97,6 @@ def create_args():
         sampling_scale=1.,  # use this flag to rescale the variance of the noise
         guided_iterations=9999999,  # set a high number to do all iteration in a guided way
 
-        # evaluation args
-        merge_and_eval=False,  # when all chunks have finished, run it with this flag
 
         # misc args
         num_chunks=1,
@@ -125,96 +122,6 @@ def create_args():
 def mean(array):
     m = np.mean(array).item()
     return 0 if math.isnan(m) else m
-
-
-def merge_and_compute_overall_metrics(args, device):
-
-    def div(q, p):
-        if p == 0:
-            return 0
-        return q / p
-
-    print('Merging all results ...')
-
-    # read all yaml files containing the info to add them together
-    summary = {
-        'class-cor': {'cf-cor': {'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-                      'cf-inc': {'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-                      'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-        'class-inc': {'cf-cor': {'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-                      'cf-inc': {'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-                      'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-        'cf-cor': {'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-        'cf-inc': {'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0},
-        'clean acc': 0,
-        'cf acc': 0,
-        'bkl': 0, 'l_1': 0, 'n': 0, 'FVA': 0, 'MNAC': 0,
-    }
-
-    for chunk in range(args.num_chunks):
-        yaml_path = osp.join(args.output_path, 'Results', args.exp_name,
-                             f'chunk-{chunk}_num-chunks-{args.num_chunks}_summary.yaml')
-
-        with open(yaml_path, 'r') as f:
-            chunk_summary = yaml.load(f, Loader=yaml.FullLoader)
-
-        summary['clean acc'] += chunk_summary['clean acc'] * chunk_summary['n']
-        summary['cf acc'] += chunk_summary['cf acc'] * chunk_summary['n']
-        
-        summary['n'] += chunk_summary['n']
-
-        summary['class-cor']['n'] += chunk_summary['class-cor']['n']
-        summary['class-inc']['n'] += chunk_summary['class-inc']['n']
-
-        summary['cf-cor']['n'] += chunk_summary['cf-cor']['n']
-        summary['cf-inc']['n'] += chunk_summary['cf-inc']['n']
-
-        summary['class-cor']['cf-cor']['n'] += chunk_summary['class-cor']['cf-cor']['n']
-        summary['class-cor']['cf-inc']['n'] += chunk_summary['class-cor']['cf-inc']['n']
-        summary['class-inc']['cf-cor']['n'] += chunk_summary['class-inc']['cf-cor']['n']
-        summary['class-inc']['cf-inc']['n'] += chunk_summary['class-inc']['cf-inc']['n']
-
-
-        for k in ['bkl', 'l_1', 'FVA', 'MNAC']:
-            summary[k] += chunk_summary[k] * chunk_summary['n']
-
-            summary['class-cor'][k] += chunk_summary['class-cor'][k] * chunk_summary['class-cor']['n']
-            summary['class-inc'][k] += chunk_summary['class-inc'][k] * chunk_summary['class-inc']['n']
-
-            summary['cf-cor'][k] += chunk_summary['cf-cor'][k] * chunk_summary['cf-cor']['n']
-            summary['cf-inc'][k] += chunk_summary['cf-inc'][k] * chunk_summary['cf-inc']['n']
-
-            summary['class-cor']['cf-cor'][k] += chunk_summary['class-cor']['cf-cor'][k] * chunk_summary['class-cor']['cf-cor']['n']
-            summary['class-cor']['cf-inc'][k] += chunk_summary['class-cor']['cf-inc'][k] * chunk_summary['class-cor']['cf-inc']['n']
-            summary['class-inc']['cf-cor'][k] += chunk_summary['class-inc']['cf-cor'][k] * chunk_summary['class-inc']['cf-cor']['n']
-            summary['class-inc']['cf-inc'][k] += chunk_summary['class-inc']['cf-inc'][k] * chunk_summary['class-inc']['cf-inc']['n']
-
-    for k in ['cf acc', 'clean acc']:
-        summary[k] = div(summary[k], summary['n'])
-
-    for k in ['bkl', 'l_1', 'FVA', 'MNAC']:
-        summary[k] = div(summary[k], summary['n'])
-
-        summary['class-cor'][k] = div(summary['class-cor'][k], summary['class-cor']['n'])
-        summary['class-inc'][k] = div(summary['class-inc'][k], summary['class-inc']['n'])
-
-        summary['cf-cor'][k] = div(summary['cf-cor'][k], summary['cf-cor']['n'])
-        summary['cf-inc'][k] = div(summary['cf-inc'][k], summary['cf-inc']['n'])
-
-        summary['class-cor']['cf-cor'][k] = div(summary['class-cor']['cf-cor'][k], summary['class-cor']['cf-cor']['n'])
-        summary['class-cor']['cf-inc'][k] = div(summary['class-cor']['cf-inc'][k], summary['class-cor']['cf-inc']['n'])
-        summary['class-inc']['cf-cor'][k] = div(summary['class-inc']['cf-cor'][k], summary['class-inc']['cf-cor']['n'])
-        summary['class-inc']['cf-inc'][k] = div(summary['class-inc']['cf-inc'][k], summary['class-inc']['cf-inc']['n'])
-
-    # summary is ready to save
-    print('done')
-    print('Acc on the set:', summary['clean acc'])
-    print('CF Acc on the set:', summary['cf acc'])
-
-    with open(osp.join(args.output_path, 'Results', args.exp_name, 'summary.yaml'), 'w') as f:
-        yaml.dump(summary, f)
-
-
 # =======================================================
 # =======================================================
 # Main
@@ -231,11 +138,6 @@ def main():
                 exist_ok=True)
 
     # ========================================
-    # Evaluate all feature in case of 
-    if args.merge_and_eval:
-        merge_and_compute_overall_metrics(args, dist_util.dev())
-        return  # finish the script
-
     # ========================================
     # Set seeds
 

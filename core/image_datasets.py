@@ -364,37 +364,6 @@ class CheXpertDataset(Dataset):
             return img, {}
 
 
-class CheXpertMiniVal(CheXpertDataset):
-    def __init__(
-        self,
-        image_size,
-        data_dir,
-        partition=None,
-        shard=0,
-        num_shards=1,
-        class_cond=False,
-        random_crop=True,
-        random_flip=True,
-        query_label=-1,
-        normalize=True,
-    ):
-        self.data = pd.read_csv('utils/minival.csv').iloc[:, 1:]
-        self.data = self.data[shard::num_shards]
-        self.image_size = image_size
-        self.transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.RandomHorizontalFlip() if random_flip else lambda x: x,
-            transforms.CenterCrop(image_size),
-            transforms.RandomResizedCrop(image_size, (0.95, 1.0)) if random_crop else lambda x: x,
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5],
-                                 [0.5, 0.5, 0.5]) if normalize else lambda x: x,
-        ])
-        self.data_dir = data_dir
-        self.class_cond = class_cond
-        self.query = query_label
-
-
 class PEDataset(Dataset):
     def __init__(
         self,
@@ -480,7 +449,7 @@ class PE90DotNoSupportDataset(Dataset):
         image_size,
         data_dir,
         partition,
-        path='img_dot_healthy_90',
+        path='imgs',
         task='classification', # it can either be classification or detection
         shard=0,
         num_shards=1,
@@ -531,103 +500,18 @@ class PE90DotNoSupportDataset(Dataset):
         img_file = sample['Path']
 
         # Determine the label based on the task
-        # if self.task == 'classification':
-        label = 0 if sample['group'] in [0, 2] else 1
-        # if self.task == 'detection':
-        #     # Convert 'Healthy/Unhealthy' to binary labels
-        #     label = 1 if sample['group'] in [0,1] else 0
-        # elif self.task == 'both':
-        #     det_label = 1 if sample['group'] in [0, 1] else 0
-        #     cls_label = 0 if sample['group'] in [0, 2] else 1
-        # else:
-        #     raise ValueError(f'Unknown task {self.task}')
-        # Rest of the code to load and transform the image...
-        with open(os.path.join(self.data_dir, self.path, img_file), "rb") as f:
-            img = Image.open(f)
-            img = img.convert('RGB')
-
-        img = self.transform(img)
-        if self.task == 'both':
-            return img, {'y': cls_label, 'z': det_label}
-        return img, label
-
-
-
-class BiasedPEDataset(Dataset):
-    def __init__(
-        self,
-        image_size,
-        data_dir,
-        partition,
-        path='img_pe',
-        task='classification', # it can either be classification or detection
-        shard=0,
-        num_shards=1,
-        class_cond=False,
-        random_crop=True,
-        random_flip=True,
-        normalize=True,
-    ):
-        self.data_dir = data_dir
-        data = pd.read_csv(osp.join(data_dir, 'list_attr_pe.csv'))
-
-        if partition == 'train':
-            partition = 0
-        elif partition == 'val':
-            partition = 1
-        elif partition == 'test':
-            partition = 2
-        else:
-            raise ValueError(f'Unkown partition {partition}')
-
-        self.data = data[data['partition'] == partition]
-        self.data = self.data[shard::num_shards]
-        self.data.reset_index(inplace=True)
-        if task in ['classification', 'both']:
-            # Keep only data with group 0 or 3 for classification task
-            self.data = self.data[self.data['group'].isin([0, 3])]        # self.data.replace(-1, 0, inplace=True)
-        self.partition = partition
-
-        self.transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.RandomHorizontalFlip() if random_flip else lambda x: x,
-            transforms.CenterCrop(image_size),
-            transforms.RandomResizedCrop(image_size, (0.95, 1.0)) if random_crop else lambda x: x,
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5],
-                                 [0.5, 0.5, 0.5]) if normalize else lambda x: x
-        ])
-
-        self.class_cond = class_cond
-        self.task = task
-        self.path = path
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        sample = self.data.iloc[idx, :]
-        img_file = sample['Path']
-
-        # Determine the label based on the task
         if self.task == 'classification':
-            # Convert 'Healthy/Unhealthy' to binary labels
-            if self.partition == 2:
-                label = 0 if sample['group'] in [0, 2] else 1
-            else:
-                if sample['group'] in [0]:
-                    label = 0
-                elif sample['group'] in [3]:
-                    label = 1
+                # Convert 'Healthy/Unhealthy' to binary labels make sure to change back to [0, 2]
+                label = 0 if sample['group'] in [0, 2] else 1 
         elif self.task == 'detection':
             # Binary label for dot detection based on 'group'
             label = 1 if sample['group'] in [0, 1] else 0
         elif self.task == 'both':
             det_label = 1 if sample['group'] in [0, 1] else 0
-            cls_label = 0 if sample['group'] in [0, 2] else 1
+            cls_label = 0 if sample['group'] in [0, 2] else 1 
         else:
             raise ValueError(f'Unknown task {self.task}')
-
+        
         # Rest of the code to load and transform the image...
         with open(os.path.join(self.data_dir, self.path, img_file), "rb") as f:
             img = Image.open(f)
@@ -638,7 +522,7 @@ class BiasedPEDataset(Dataset):
             return img, {'y': cls_label, 'z': det_label}
         return img, label
 
-    
+
 class MedicalDevicePEDataset(Dataset):
     def __init__(
         self,
@@ -657,7 +541,6 @@ class MedicalDevicePEDataset(Dataset):
         normalize=True,
         biased=False,
         rebalance=True,
-        positive_label=1,
         sample=False
     ):
         self.data_dir = data_dir
@@ -695,11 +578,8 @@ class MedicalDevicePEDataset(Dataset):
         self.biased = biased
         if rebalance:
             self.data = self._balance_subjects(self.data, ratio=ratio, sample=sample)
-        self.positive_label = positive_label
     @staticmethod
-    def _balance_subjects(df, ratio=1., sample=False):
-        print('here')
-        print(sample)
+    def _balance_subjects(df, ratio=0.1, sample=False):
         if ratio==1:
             return df
         else:
@@ -729,13 +609,13 @@ class MedicalDevicePEDataset(Dataset):
         # Determine the label based on the task
         if self.task == 'classification':
                 # Convert 'Healthy/Unhealthy' to binary labels make sure to change back to [0, 2]
-                label = self.positive_label if sample['group'] in [0, 2] else 1 - self.positive_label
+                label = 0 if sample['group'] in [0, 2] else 1
         elif self.task == 'detection':
             # Binary label for dot detection based on 'group'
             label = 1 if sample['group'] in [0, 1] else 0
         elif self.task == 'both':
             det_label = 1 if sample['group'] in [0, 1] else 0
-            cls_label = self.positive_label if sample['group'] in [0, 2] else 1 - self.positive_label
+            cls_label = 0 if sample['group'] in [0, 2] else 1
         else:
             raise ValueError(f'Unknown task {self.task}')
 
@@ -749,79 +629,3 @@ class MedicalDevicePEDataset(Dataset):
             return img, {'y': cls_label, 'z': det_label}
         return img, label
     
-
-
-class MedicalDeviceDataset(Dataset):
-    def __init__(
-        self,
-        image_size,
-        data_dir,
-        csv_dir,
-        partition,
-        path='img_chexpert',
-        task='detection', # it can either be classification or detection
-        shard=0,
-        num_shards=1,
-        ratio=1,
-        class_cond=False,
-        random_crop=True,
-        random_flip=True,
-        normalize=True,
-        biased=False,
-        rebalance=False,
-    ):
-        self.data_dir = data_dir
-        if csv_dir is None:
-            raise ValueError("unspecified csv directory")
-        data = pd.read_csv(osp.join(csv_dir, 'md.csv'))
-
-        if partition == 'train':
-            partition = 0
-        elif partition == 'val':
-            partition = 1
-        elif partition == 'test':
-            partition = 2
-        else:
-            raise ValueError(f'Unkown partition {partition}')
-
-        self.data = data[data['partition'] == partition]
-        self.data = self.data[shard::num_shards]
-        self.data.reset_index(inplace=True)
-        self.data.replace(-1, 0, inplace=True)
-
-        self.transform = transforms.Compose([
-            transforms.Resize(image_size),
-            transforms.RandomHorizontalFlip() if random_flip else lambda x: x,
-            transforms.CenterCrop(image_size),
-            transforms.RandomResizedCrop(image_size, (0.95, 1.0)) if random_crop else lambda x: x,
-            transforms.ToTensor(),
-            transforms.Normalize([0.5, 0.5, 0.5],
-                                 [0.5, 0.5, 0.5]) if normalize else lambda x: x
-        ])
-
-        self.class_cond = class_cond
-        self.task = task
-        self.path = path
-        self.biased = biased
-        
-  
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        sample = self.data.iloc[idx, :]
-        img_file = sample['Path']
-
-        if self.task == 'detection':
-            # Binary label for dot detection based on 'group'
-            label = 1 if sample['Support Devices'] == 1 else 0
-        else:
-            raise ValueError(f'Unknown task {self.task}')
-
-        # Rest of the code to load and transform the image...
-        with open(os.path.join(self.data_dir, self.path, img_file), "rb") as f:
-            img = Image.open(f)
-            img = img.convert('RGB')
-
-        img = self.transform(img)
-        return img, label

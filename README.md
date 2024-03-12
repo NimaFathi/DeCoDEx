@@ -4,12 +4,18 @@
 Welcome to the official repository of the DeCoDEx project. This framework is designed for generating deep counterfactual explanations using diffusion models and classifiers. Below you'll find instructions on how to create datasets, train models, and generate counterfactuals, along with information on the metrics used for evaluation.
 
 ## Table of Contents
-
+- [Create Virtual Environment](#install-venv)
 - [Create Datasets](#create-datasets)
 - [Train DDPM](#train-ddpm)
 - [Train Classifiers](#train-classifiers)
 - [Counterfactual Generation](#counterfactual-generation)
 - [Metrics](#metrics)
+
+## Install Venv
+Create a virtual Environment and install the nessecary packages from the `requirements.txt` file as shown:
+```bash
+pip install -r requirements.txt --no-cache
+```
 
 ## Create Datasets
 

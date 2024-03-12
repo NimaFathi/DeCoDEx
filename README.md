@@ -1,7 +1,7 @@
 
 # DeCoDEx: Deep Counterfactual Explanation Framework
 
-Welcome to the official repository of the DeCoDEx project. This framework is designed for generating deep counterfactual explanations using diffusion models and classifiers. Below you'll find instructions on how to create datasets, train models, and generate counterfactuals, along with information on the metrics used for evaluation.
+Welcome to the official repository of the DeCoDEx project. This framework is designed for generating deep counterfactual explanations using diffusion models and classifiers. Below you'll find instructions on how to create datasets, train models, and generate counterfactuals, along with information on the metrics used for evaluation. This codebase is influenced by [DiME repository](https://github.com/guillaumejs2403/DiME).
 
 ## Table of Contents
 - [Create Virtual Environment](#install-venv)
@@ -86,15 +86,60 @@ python train_classifier.py \
 
 Adjust these parameters according to your dataset and training preferences. For further customization, you can add additional arguments as needed.
 
+
 ## Counterfactual Generation
 
-After training the DDPM and classifiers, you can generate counterfactuals by running:
+The framework generates counterfactual explanations by integrating diffusion models with classifiers and detectors. The generation script is configurable to accommodate various experimental setups and datasets.
+
+### Generating Counterfactuals
+
+Execute the command below to start generating counterfactuals. You'll need to replace the placeholders with appropriate values tailored to your specific requirements:
 
 ```bash
-python generate_counterfactuals.py --model_path [DDPM_MODEL_PATH] --detector_path [DETECTOR_MODEL_PATH] --classifier_path [CLASSIFIER_MODEL_PATH] --input [INPUT_DATA] --output [OUTPUT_PATH]
+python -W ignore ../mains/main_md_gradreversal.py [MODEL_FLAGS] [SAMPLE_FLAGS] \
+  --output_path [your_output_path] \
+  --num_batches [number_of_batches] \
+  --start_step [starting_diffusion_step] \
+  --dataset [your_dataset_name] \
+  --exp_name [your_experiment_name] \
+  --gpu [gpu_id] \
+  --model_path [path_to_ddpm_model] \
+  --classifier_scales [classifier_scales] \
+  --detector_scales [detector_scales] \
+  --classifier_path [path_to_classifier_model] \
+  --detector_path [path_to_detector_model] \
+  --seed [random_seed] \
+  --oracle_path [path_to_oracle_model] \
+  --use_logits [use_logits_flag] \
+  --data_dir [your_data_directory] \
+  --l1_loss [l1_loss_weight] \
+  --use_sampling_on_x_t [use_sampling_on_intermediate_flag] \
+  --save_images [save_generated_images_flag] \
+  --image_size [size_of_generated_images] \
+  --csv_dir [directory_for_saving_csv_metadata] \
+  --detector_threshold [detector_activation_threshold] \
+  --classifier_threshold [classifier_activation_threshold]
 ```
 
-(Replace placeholders with the appropriate file paths and data.)
+### Arguments Overview
+- `[MODEL_FLAGS]`: Configuration flags for the diffusion model, such as number of channels, resolution for attention layers, etc.
+- `[SAMPLE_FLAGS]`: Sampling-related flags, like batch size and timestep respacing.
+- `--output_path`: Directory where generated counterfactuals and other results will be saved.
+- `--num_batches`, `--start_step`: Control the number of batches processed and the starting point in the diffusion process.
+- `--dataset`, `--exp_name`: Specify the dataset used and a name for the experiment.
+- `--gpu`: ID of the GPU for computation.
+- `--model_path`, `--classifier_path`, `--detector_path`, `--oracle_path`: Paths to your pretrained models.
+- `--seed`: Seed for reproducibility.
+- `--use_logits`: Flag indicating whether to use logits in classifications.
+- `--data_dir`: Location of your dataset.
+- `--l1_loss`: Weight of the L1 component in the overall loss function.
+- `--use_sampling_on_x_t`: Flag to enable sampling on intermediate diffusion steps.
+- `--save_images`: Flag to save generated counterfactual images.
+- `--image_size`: Dimensions for the generated images.
+- `--csv_dir`: Where to save CSV files with metadata about the generations.
+- `--detector_threshold`, `--classifier_threshold`: Thresholds for activation of the detector and classifier.
+
+Please refer to the provided script file within the repository for a comprehensive example, including all necessary parameters for running your counterfactual generation experiments effectively.
 
 ## Results
 The directory structure for the results of the experiments is organized as follows:

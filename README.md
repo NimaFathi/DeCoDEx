@@ -49,7 +49,7 @@ This section provides instructions on how to train classifiers or detectors for 
 To train your model, use the following command structure. Replace the placeholder values with your specific configurations:
 
 ```bash
-python train_classifier.py \
+python [erm.py|groupdro.py] \
   --data_dir [path_to_data] \
   --model_path [path_to_save_model] \
   --epochs [num_epochs] \

@@ -211,6 +211,11 @@ The `Info` directory contains essential information needed for running the metri
 - **class pred (org img)**: Predicted value of the classifier on the original image.
 - **class target**: Target value for prediction during inference; for classification, it is always the opposite of `class pred (org img)`.
 - **cf pred**: Predicted disease value for the counterfactual image.
+## TODO:
+- [x] Complete the ReadMe.
+- [ ] Add pretrained weights for classifiers and DDPM.
+- [ ] Add all the metrics that are used in paper.
+- [ ] Add all the metrics that are used in paper.
 
 
 ## Code Base 

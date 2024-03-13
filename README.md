@@ -213,9 +213,10 @@ The `Info` directory contains essential information needed for running the metri
 - **cf pred**: Predicted disease value for the counterfactual image.
 ## TODO:
 - [x] Complete the ReadMe.
-- [ ] Add pretrained weights for classifiers and DDPM.
+- [ ] Add pretrained weights classifiers and detectors per each dataset.
+- [ ] Add pretrained weights for DDPM.
 - [ ] Add all the metrics that are used in paper.
-
+- [ ] Train other conditional score-based diffusion models. 
 
 ## Code Base 
 Our repository is based on [DiME](https://github.com/guillaumejs2403/DiME)

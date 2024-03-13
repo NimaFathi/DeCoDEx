@@ -134,7 +134,7 @@ python -W ignore ../mains/main_md_gradreversal.py [MODEL_FLAGS] [SAMPLE_FLAGS] \
 - `--csv_dir`: Where to save CSV files with metadata about the generations.
 - `--detector_threshold`, `--classifier_threshold`: Thresholds for activation of the detector and classifier.
 
-
+[Here](sample.sh) is an example script.
 ## Results
 The directory structure for the results of the experiments is organized as:
 ```

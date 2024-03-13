@@ -215,7 +215,6 @@ The `Info` directory contains essential information needed for running the metri
 - [x] Complete the ReadMe.
 - [ ] Add pretrained weights for classifiers and DDPM.
 - [ ] Add all the metrics that are used in paper.
-- [ ] Add all the metrics that are used in paper.
 
 
 ## Code Base 

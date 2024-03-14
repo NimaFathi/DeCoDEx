@@ -320,7 +320,7 @@ def main():
                                     'classifier': classifier,
                                     's': classifier_scale,
                                     'use_logits': args.use_logits},
-                    dist_grad_fn=dist_cond_fn,
+                    dist_grad_fn=dist_cond_fn, # you can use clean_class_cond_fn with binary labels as well.
                     dist_grad_kargs={'l1_loss': args.l1_loss,
                                     'l2_loss': args.l2_loss,
                                     'l_perc': vggloss},

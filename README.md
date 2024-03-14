@@ -25,10 +25,10 @@ pip install -r requirements.txt --no-cache
 
 Follow the steps outlined below:
 
-1. **Data Preparation**: Download cheXpert dataset from this [link](https://stanfordmlgroup.github.io/competitions/chexpert/). Use the `train.csv` file to contrive different version of the dataset.
+1. **Data Preparation**: Download cheXpert dataset from this [link](https://stanfordmlgroup.github.io/competitions/chexpert/). Use the `train.csv` file to contrive different versions of the dataset.
 2. **Preprocessing**: Apply the necessary preprocessing steps. We have two different sub-datasets:
-- _Dot Dataset_: In this case we only use the subjects without support devices based on the labels in the `train.csv` file. 90% of the subjects with `Pleural Effusion` are augmented with the artifact whereas only 10% of subjects with `No Finding` contain the artifact. [Dot Dataset](notebooks/create_dot_dataset.ipynb)
-- _Device Dataset_: In this case, no mofications are made to the raw images directly downloaded from the repository. For subjects with `Pleural Effusion` we contrive the number of samples in a way that 90% of such subjects also have `Support Devices` whereas for the subjects with `No Finding` statistics are the opposite (90% of such subjects does not have `Support Devices`). [Device Dataset](notebooks/create_md_dataset.ipynb)
+- _Dot Dataset_: In this case, we only use the subjects without support devices based on the labels in the `train.csv` file. 90% of the subjects with `Pleural Effusion` are augmented with the artifact whereas only 10% of subjects with `No Finding` contain the artifact. [Dot Dataset](notebooks/create_dot_dataset.ipynb)
+- _Device Dataset_: In this case, no modifications are made to the raw images directly downloaded from the repository. For subjects with `Pleural Effusion` we contrive the number of samples in a way that 90% of such subjects also have `Support Devices` whereas for the subjects with `No Finding` statistics are the opposite (90% of such subjects do not have `Support Devices`). [Device Dataset](notebooks/create_md_dataset.ipynb)
 
 ## Train DDPM
 

@@ -118,34 +118,29 @@ def smooth_l1_loss(x, y, beta=1.0):
 @torch.enable_grad()
 def clean_detect_cond_fn(x_t, y, detector, s, use_logits):
     '''
-    Computes the classifier gradients for the guidance
+    Computes the detector gradients for the guidance
 
     :param x_t: clean instance
-    :param y: continuous output from teacher model
-    :param classifier: classification model (student)
-    :param s: scaling classifier gradients parameter
+    :param y: target
+    :param detector: detector model
+    :param s: scaling detector gradients parameter
     :param use_logits: compute the loss over the logits
     '''
     x_in = x_t.detach().requires_grad_(True)
-    logits = detector(x_in)
-    y = y.to(logits.device).float()
-   
-    # Compute the loss directly between teacher's signals (y) and student's logits
-    selected  = smooth_l1_loss(logits, y)
-    # selected = y * logits - (1 - y) * logits
-    if use_logits:
-        selected = selected
-    else:
-        y = F.logsigmoid(y)
-        pred_y =  F.logsigmoid(logits)
-        selected = smooth_l1_loss(pred_y, y)
-        selected = selected
+    predictions = detector(x_in)
 
+    y = y.to(predictions.device).float()
     
-    selected = selected * s
-    grads = torch.autograd.grad(selected.sum(), x_in)[0]
+    if use_logits:
+        loss = F.smooth_l1_loss(predictions, y, reduction='mean')
+    else:
+        loss = F.smooth_l1_loss(torch.sigmoid(predictions), y, reduction='mean')
+
+    loss = loss * s
+    grads = torch.autograd.grad(loss, x_in)[0]
 
     return grads
+
 
 # @torch.enable_grad()
 # def clean_detect_cond_fn(x_t, y, detector,

@@ -10,6 +10,10 @@ Link to the paper - [DeCoDEx](https://openreview.net/forum?id=M6CfJ5H7XH)
 Some of the qualitative results highlighting the strength of DeCoDEx is shown below:
 ![Qualitative Results](images/qualitative_comparison.png)
 
+The gif below shows the changes between factual and counterfactual images
+
+![cf_f](images/cf_f.gif)
+
 ## Table of Contents
 - [Create Virtual Environment](#create-virtual-environment-venv)
 - [Create Datasets](#create-datasets)

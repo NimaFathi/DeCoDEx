@@ -14,6 +14,9 @@ The gif below shows the changes between factual and counterfactual images
 
 ![cf_f](images/cf_f.gif)
 
+Samples of the synthesized counterfactual images
+![samples](images/ablations.png)
+
 ## Table of Contents
 - [Create Virtual Environment](#create-virtual-environment-venv)
 - [Create Datasets](#create-datasets)
@@ -218,12 +221,6 @@ The `Info` directory contains essential information needed for running the metri
 - **class pred (org img)**: Predicted value of the classifier on the original image.
 - **class target**: Target value for prediction during inference; for classification, it is always the opposite of `class pred (org img)`.
 - **cf pred**: Predicted disease value for the counterfactual image.
-## TODO - Future Works
-- [x] Complete the ReadMe.
-- [ ] Add pretrained weights classifiers and detectors per each dataset.
-- [ ] Add pretrained weights for DDPM.
-- [ ] Add all the metrics that are used in paper.
-- [ ] Train other conditional score-based diffusion models. 
 
 ## Code Base 
 Our repository is based on [DiME](https://github.com/guillaumejs2403/DiME)

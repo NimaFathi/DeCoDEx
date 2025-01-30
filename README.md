@@ -1,7 +1,7 @@
 
 # DeCoDEx: Confounder Detector Guidance for Improved Diffusion-based Counterfactual Explanations
 
-This is the official repository of the DeCoDEx (submitted to Medical Imaging with Deep Learning (MIDL 2024)). 
+This is the official repository of the DeCoDEx (accepted to Medical Imaging with Deep Learning (MIDL 2024)). 
 
 Link to the paper - [DeCoDEx](https://openreview.net/forum?id=M6CfJ5H7XH)
 
